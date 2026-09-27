@@ -1,0 +1,37 @@
+# 性能基线指标定义模板
+# 用法：hermes skill run s4-validation/perf-baseline --action establish --spec .hermes/perf/benchmarks.yaml
+
+suite: "api-latency"
+warmup_runs: 10
+measure_runs: 100
+concurrency: [1, 10, 50, 100]
+environment: "staging"  # 必须与基线建立环境一致
+
+endpoints:
+  - name: "api_search_books"
+    method: "GET"
+    path: "/api/v1/books/search"
+    params: {q: "python", limit: 20}
+    targets:
+      throughput_rps: 200
+      p50_ms: 80
+      p90_ms: 150
+      p99_ms: 200
+      error_rate: 0.001
+      cpu_percent: 60
+      mem_mb: 512
+  - name: "api_download_audio"
+    method: "GET"
+    path: "/api/v1/books/{id}/download"
+    targets:
+      throughput_rps: 50
+      p50_ms: 150
+      p90_ms: 400
+      p99_ms: 500
+      error_rate: 0.0005
+
+thresholds:
+  # 核心路径：5% 退化即 FAIL；非核心：15%
+  core: {max_regression: 5, alert: 3}
+  non_core: {max_regression: 15, alert: 10}
+  new_endpoint: {establish_only: true}
